@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>JWT &amp; JWT Security — Interactive Quiz</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#0d1117; --panel:#161d2b; --panel2:#1d2637; --line:#2a3550;
+    --txt:#e6edf7; --muted:#8fa0bd; --accent:#4f8cff;
+    --ok:#22c55e; --bad:#ef4444;
+  }
+  html,body{height:100%}
+  body{
+    margin:0; background:radial-gradient(1200px 600px at 50% -10%, #1b2740 0%, #0d1117 60%);
+    color:var(--txt); padding:24px 16px 64px;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:820px;margin:0 auto}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .brand{font-weight:700;letter-spacing:.2px;font-size:15px;color:var(--muted)}
+  .brand b{color:var(--txt)}
+  .scorebox{font-size:13px;color:var(--muted);background:var(--panel);border:1px solid var(--line);padding:6px 12px;border-radius:999px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 20px 50px -30px #000}
+  h1{font-size:22px;margin:0 0 6px}
+  h2.qtext{font-size:18px;line-height:1.45;margin:14px 0 18px;font-weight:600}
+  p.sub{color:var(--muted);margin:0 0 18px;font-size:14px;line-height:1.5}
+  .pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;letter-spacing:.3px;text-transform:uppercase}
+  .t-beginner{background:#12301f;color:#4ade80;border:1px solid #1d4d33}
+  .t-intermediate{background:#12253f;color:#60a5fa;border:1px solid #1e3a63}
+  .t-advanced{background:#241a3d;color:#c084fc;border:1px solid #3b2a63}
+  .t-security{background:#3a1616;color:#f87171;border:1px solid #5b2323}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .counter{font-size:13px;color:var(--muted)}
+  .progress{height:6px;background:#0e1521;border-radius:999px;overflow:hidden;margin:14px 0 4px}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,#4f8cff,#7c5cff);width:0;transition:width .25s ease}
+  .options{display:grid;gap:10px}
+  .option{
+    display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;
+    background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    padding:14px 16px;border-radius:12px;font-size:15px;line-height:1.45;cursor:pointer;
+    font-family:inherit;transition:border-color .15s,background .15s,transform .05s;
+  }
+  .option:hover:not(.locked){border-color:#3f5b96;background:#222d42}
+  .option:active:not(.locked){transform:scale(.998)}
+  .option .key{
+    flex:0 0 26px;height:26px;border-radius:8px;display:grid;place-items:center;
+    background:#0e1521;border:1px solid var(--line);font-size:12px;font-weight:700;color:var(--muted)
+  }
+  .option .txt{flex:1}
+  .option .mark{font-weight:800;font-size:16px}
+  .option.locked{cursor:default}
+  .option.correct{border-color:var(--ok);background:rgba(34,197,94,.12)}
+  .option.correct .key{background:rgba(34,197,94,.18);border-color:var(--ok);color:#86efac}
+  .option.correct .mark{color:var(--ok)}
+  .option.wrong{border-color:var(--bad);background:rgba(239,68,68,.12)}
+  .option.wrong .key{background:rgba(239,68,68,.18);border-color:var(--bad);color:#fca5a5}
+  .option.wrong .mark{color:var(--bad)}
+  .feedback{margin-top:16px;border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.55;border:1px solid var(--line);background:#121a28;display:none}
+  .feedback.show{display:block}
+  .feedback .verdict{font-weight:800;margin-bottom:6px;display:block}
+  .feedback.ok{border-color:#1d4d33;background:rgba(34,197,94,.08)}
+  .feedback.ok .verdict{color:#4ade80}
+  .feedback.bad{border-color:#5b2323;background:rgba(239,68,68,.08)}
+  .feedback.bad .verdict{color:#f87171}
+  .feedback code{background:#0b1220;border:1px solid var(--line);padding:1px 5px;border-radius:5px;font-size:13px}
+  .actions{margin-top:16px;display:flex;justify-content:flex-end;gap:10px}
+  button.btn{
+    font-family:inherit;font-size:14px;font-weight:600;padding:11px 20px;border-radius:11px;cursor:pointer;
+    background:var(--accent);color:#fff;border:1px solid transparent;transition:filter .15s
+  }
+  button.btn:hover{filter:brightness(1.08)}
+  button.btn.ghost{background:transparent;border-color:var(--line);color:var(--txt)}
+  button.btn.ghost:hover{background:var(--panel2)}
+  .filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .results-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+  @media(max-width:560px){.results-grid{grid-template-columns:1fr}}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .stat .n{font-size:22px;font-weight:800}
+  .stat .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .review{margin-top:8px}
+  .review .item{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;background:#121a28}
+  .review .item .qq{font-weight:600;margin-bottom:8px;line-height:1.45}
+  .review .item .line{font-size:14px;color:var(--muted);margin:3px 0;line-height:1.5}
+  .review .item .line b{color:var(--txt)}
+  .big-score{font-size:44px;font-weight:800;letter-spacing:-1px}
+  .toggle{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+  .toggle input{accent-color:var(--accent);width:16px;height:16px}
+  footer.note{margin-top:18px;font-size:12px;color:#5b6b88;text-align:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><b>JWT</b> &amp; JWT Security — Quiz</div>
+    <div class="scorebox" id="scorebox">Score 0 / 0</div>
+  </header>
+  <main id="app"></main>
+  <footer class="note">Tip: press <b>1–4</b> to answer, <b>Enter</b> for next. Works fully offline.</footer>
+</div>
+
+<script>
+/* ============================================================
+   QUESTION BANK
+   tier: Beginner | Intermediate | Advanced | Security
+   a: index of correct option (0-based)
+   ============================================================ */
+const QUESTIONS = [
+  /* ---------- PART 1: BEGINNER ---------- */
+  {tier:'Beginner', q:'What does JWT stand for?',
+   o:['Java Web Token','JSON Web Token','JavaScript Web Token','JSON Web Transfer'], a:1,
+   e:'JWT = <b>JSON Web Token</b>, defined by RFC 7519.'},
+
+  {tier:'Beginner', q:'How many parts does a JWT (JWS compact serialization) have?',
+   o:['2','3','4','5'], a:1,
+   e:'Three: <code>header.payload.signature</code>, separated by dots.'},
+
+  {tier:'Beginner', q:'Which character separates the parts of a JWT?',
+   o:['. (period)',', (comma)','- (hyphen)',': (colon)'], a:0,
+   e:'A period <code>.</code> separates each part.'},
+
+  {tier:'Beginner', q:'Which encoding is used for each JWT part?',
+   o:['Base64','Base64URL (URL-safe Base64, no padding)','Hex','ASCII'], a:1,
+   e:'Base64URL replaces <code>+</code>/<code>/</code> with <code>-</code>/<code>_</code> and drops <code>=</code> padding so tokens are URL/header safe.'},
+
+  {tier:'Beginner', q:'What is the JWT header typically used for?',
+   o:['Storing user data','Specifying the token type and the signing/encryption algorithm','Storing the signature','Encrypting the payload'], a:1,
+   e:'The header holds <code>typ</code> (usually "JWT") and <code>alg</code> (e.g. HS256, RS256), plus optional params like <code>kid</code>.'},
+
+  {tier:'Beginner', q:'Are JWT payloads encrypted by default?',
+   o:['Yes, with AES-256','No — they are only Base64URL-encoded and readable by anyone','Yes, if using HS256','Only if the token is expired'], a:1,
+   e:'A signed JWT (JWS) gives <b>integrity, not confidentiality</b>. Anyone holding the token can decode the payload. Use JWE if you need encryption.'},
+
+  {tier:'Beginner', q:'Which HTTP header is typically used to send a JWT to an API?',
+   o:['Authorization: Bearer &lt;token&gt;','Token: &lt;token&gt;','Auth: &lt;token&gt;','JWT: &lt;token&gt;'], a:0,
+   e:'The standard is <code>Authorization: Bearer &lt;token&gt;</code>.'},
+
+  {tier:'Beginner', q:'Which of the following is a registered (standard) JWT claim?',
+   o:['username','exp','role','email'], a:1,
+   e:'Registered claims are <code>iss, sub, aud, exp, nbf, iat, jti</code>. Others are custom claims.'},
+
+  {tier:'Beginner', q:'What does the exp claim represent?',
+   o:['Expiration time (in seconds since Unix epoch)','Expert level','Express route','Export flag'], a:0,
+   e:'<code>exp</code> = expiration time as NumericDate (seconds since epoch). Tokens must be rejected after it.'},
+
+  {tier:'Beginner', q:'JWT is defined by which RFC?',
+   o:['RFC 7519','RFC 2616','RFC 7540','RFC 6749'], a:0,
+   e:'RFC 7519 is JWT. RFC 6749 is OAuth 2.0 — related, but different.'},
+
+  /* ---------- PART 2: INTERMEDIATE ---------- */
+  {tier:'Intermediate', q:'In a JWS, what exactly is signed?',
+   o:['The entire token including the signature','base64url(header) + "." + base64url(payload)','The payload only','The header only'], a:1,
+   e:'The signing input is the header and payload segments joined by a dot. The signature is computed over that string.'},
+
+  {tier:'Intermediate', q:'Which of these is a symmetric signing algorithm?',
+   o:['RS256','ES256','HS256','PS256'], a:2,
+   e:'HS256 uses HMAC with a shared secret. RS256/PS256 (RSA) and ES256 (ECDSA) are asymmetric.'},
+
+  {tier:'Intermediate', q:'What does the typ header parameter typically contain?',
+   o:['JWT','HS256','Bearer','JSON'], a:0,
+   e:'<code>typ</code> is usually <code>"JWT"</code>; it declares the token type.'},
+
+  {tier:'Intermediate', q:'What does the iat claim mean?',
+   o:['Issued At','Issuer','Identity Access Token','Internal Auth Token'], a:0,
+   e:'<code>iat</code> = Issued At timestamp. Useful for "not issued before password change" style checks.'},
+
+  {tier:'Intermediate', q:'Which claim identifies the intended recipient (service) of the token?',
+   o:['iss','sub','aud','jti'], a:2,
+   e:'<code>aud</code> (audience). Always validate it so a token for Service A is rejected by Service B.'},
+
+  {tier:'Intermediate', q:'What is jti used for?',
+   o:['JWT type identifier','A unique token ID (useful for replay protection / revocation lists)','JSON token index','Just-in-time issuer'], a:1,
+   e:'<code>jti</code> is a unique token ID — handy for denylists and replay protection.'},
+
+  {tier:'Intermediate', q:'Which is NOT a standard JWT claim?',
+   o:['iss','exp','password','nbf'], a:2,
+   e:'<code>password</code> is not a claim — and should never be put in a token.'},
+
+  {tier:'Intermediate', q:'What does nbf mean?',
+   o:['Not Before — the token is invalid before this time','No Buffer','Network Before','Null Byte Flag'], a:0,
+   e:'<code>nbf</code> = Not Before. The token must be rejected if used before that timestamp.'},
+
+  {tier:'Intermediate', q:'With RS256, what does the server use to sign the token?',
+   o:['The RSA public key','The RSA private key','A shared secret','The client secret'], a:1,
+   e:'Sign with the private key; anyone can verify with the public key. The private key never leaves the server.'},
+
+  {tier:'Intermediate', q:'How does Base64URL differ from standard Base64?',
+   o:['It uses + and / instead of - and _','It uses - and _ instead of + and /, and omits = padding','It encrypts the data','It compresses the data'], a:1,
+   e:'URL-safe alphabet plus no padding, so tokens survive URLs, headers and filenames.'},
+
+  /* ---------- PART 3: ADVANCED ---------- */
+  {tier:'Advanced', q:'In JWE compact serialization, how many parts are there?',
+   o:['3','4','5','6'], a:2,
+   e:'Five: <code>header.encrypted_key.iv.ciphertext.tag</code>.'},
+
+  {tier:'Advanced', q:'Which alg value in a JWS indicates the token is unsigned?',
+   o:['none','HS256','RS256','NONE256'], a:0,
+   e:'<code>"alg":"none"</code> means no signature at all. Servers must reject it.'},
+
+  {tier:'Advanced', q:'In a JWE protected header, what does enc specify?',
+   o:['The key-management algorithm (e.g., RSA-OAEP)','The content-encryption algorithm (e.g., A256GCM)','The signature algorithm','The compression method'], a:1,
+   e:'<code>alg</code> = key management (how the CEK is protected); <code>enc</code> = content encryption (how the payload is encrypted).'},
+
+  {tier:'Advanced', q:'In a JWE, which part actually contains the encrypted payload?',
+   o:['The protected header','The ciphertext','The authentication tag','The encrypted key'], a:1,
+   e:'The ciphertext segment holds the encrypted payload; the tag authenticates it.'},
+
+  {tier:'Advanced', q:'What does the kid header parameter do?',
+   o:['Identifies which key (from a key set) was used to sign/encrypt the token','Encrypts the payload','Sets token expiry','Identifies the "child" session'], a:0,
+   e:'<code>kid</code> = Key ID. It must be matched against a trusted, local key set — never used to fetch arbitrary URLs.'},
+
+  {tier:'Advanced', q:'Which claim should be validated to prevent a token issued for Service A being accepted by Service B?',
+   o:['aud','iat','typ','cty'], a:0,
+   e:'Validate <code>aud</code> against your own service identifier.'},
+
+  {tier:'Advanced', q:'What is the recommended minimum key/secret size for HS256?',
+   o:['64 bits','128 bits','256 bits (equal to the hash output size)','512 bits'], a:2,
+   e:'HMAC keys should be at least the hash output length — 256 bits for HS256.'},
+
+  {tier:'Advanced', q:'In JWT, exp is measured in...',
+   o:['Milliseconds since epoch','Seconds since Unix epoch','Minutes since epoch','An ISO 8601 string'], a:1,
+   e:'NumericDate = seconds since Unix epoch. A common bug is using milliseconds.'},
+
+  {tier:'Advanced', q:'What is the cty header used for?',
+   o:['Content type — e.g., JWT when nesting a JWT inside a JWT','Cryptography type','Client type','Country code'], a:0,
+   e:'<code>cty</code> describes the content type of the payload, e.g. nested JWTs.'},
+
+  {tier:'Advanced', q:'Which of these is a key-management best practice?',
+   o:['Hardcode keys in source code','Rotate keys periodically and store them in a KMS/secret manager','Share the private key with all clients','Reuse the same key across dev, staging, and prod'], a:1,
+   e:'Rotate keys and store them in a KMS/secret manager — never in source control.'},
+
+  {tier:'Advanced', q:'For a public-facing API consumed by third parties, which signing setup is strongest?',
+   o:['HS256 with a shared secret distributed to every client','RS256/ES256 — server holds the private key, public key is distributed','alg: none','Base64 encoding with no signature'], a:1,
+   e:'Asymmetric signing keeps the private key server-side; clients only get the public key.'},
+
+  {tier:'Advanced', q:'Which is NOT a valid JWS algorithm?',
+   o:['HS256','RS256','ES256','MD5'], a:3,
+   e:'MD5 is a broken hash, not a JWS algorithm.'},
+
+  /* ---------- PART 4: SECURITY ---------- */
+  {tier:'Security', q:'Accepting the token\'s alg header at face value enables which attack?',
+   o:['SQL injection','Algorithm confusion / "none" algorithm attack (signature bypass)','XSS','CSRF'], a:1,
+   e:'If the verifier trusts <code>alg</code>, an attacker can switch to <code>none</code> or downgrade to HS256.'},
+
+  {tier:'Security', q:'The classic RS256 → HS256 algorithm-confusion attack works because...',
+   o:['The server uses the RSA public key as the HMAC secret when verifying HS256 tokens','The token is expired','The payload is encrypted','The kid header is missing'], a:0,
+   e:'The public key is public — if it becomes the HMAC secret, attackers can forge valid HS256 tokens.'},
+
+  {tier:'Security', q:'Why is storing JWTs in localStorage risky?',
+   o:['It is not persistent','It is readable by JavaScript, so any XSS can steal the token','Tokens become too large','Tokens expire faster'], a:1,
+   e:'Any XSS payload can read <code>localStorage</code>. Prefer HttpOnly cookies.'},
+
+  {tier:'Security', q:'What is a common safer alternative to localStorage for browser JWTs?',
+   o:['HttpOnly; Secure; SameSite cookies (with CSRF protection)','sessionStorage','Global JS variables','URL query parameters'], a:0,
+   e:'HttpOnly cookies are not readable by JS. Pair them with CSRF defences.'},
+
+  {tier:'Security', q:'What is the correct order of operations when verifying a JWT?',
+   o:['Decode payload → trust claims → verify signature','Verify signature → validate claims (exp, nbf, iss, aud) → use claims','Check exp → verify signature → decode','Decode → check exp → skip signature'], a:1,
+   e:'Signature first, claims second, trust last. Never act on unverified claims.'},
+
+  {tier:'Security', q:'In Node\'s jsonwebtoken library, which option prevents the "none" algorithm?',
+   o:["algorithms: ['HS256'] (explicitly pin allowed algorithms)",'none: false','verify: true','secure: true'], a:0,
+   e:'Always pin the allowed algorithms explicitly during verification.'},
+
+  {tier:'Security', q:'Which library behavior should be avoided?',
+   o:['Explicitly specifying allowed algorithms during verification','Letting the token dictate which algorithm to use','Validating exp, nbf, iat','Verifying the signature'], a:1,
+   e:'Never let an attacker-controlled header choose your crypto.'},
+
+  {tier:'Security', q:'The jku / jwk header-injection attack is mitigated by...',
+   o:['Never trusting token-provided key URLs or embedded keys; use a fixed, trusted key set','Increasing token length','Switching to HS256','Disabling exp validation'], a:0,
+   e:'Only verify against keys you configured yourself, never keys named in the token.'},
+
+  {tier:'Security', q:'What is the security risk of using the kid header to build a file path or DB query?',
+   o:['Path traversal / SQL injection / key injection if kid is not validated against an allowlist','kid is always numeric and safe','kid is encrypted','There is no risk'], a:0,
+   e:'<code>kid</code> is attacker-controlled input. Validate it against a strict allowlist.'},
+
+  {tier:'Security', q:'Why should JWT payloads never contain passwords or sensitive PII?',
+   o:['The payload is only Base64URL-encoded (not encrypted) — anyone with the token can read it','Payloads are too small','It slows down parsing','It breaks the signature'], a:0,
+   e:'Readable by anyone holding the token — including logs, proxies and browser history.'},
+
+  {tier:'Security', q:'What is a robust defense against a stolen access token being replayed?',
+   o:['Short expiry + refresh-token rotation + revocation (e.g., jti denylist or token-version claim)','Longer expiry','Adding more claims','Using alg: none'], a:0,
+   e:'Defence in depth: short-lived tokens, rotating refresh tokens, and a revocation path.'},
+
+  {tier:'Security', q:'Why should signatures be compared with a constant-time comparison?',
+   o:['To prevent timing side-channel attacks','To make verification faster','To reduce token size','To allow alg: none'], a:0,
+   e:'Byte-by-byte early-exit comparisons leak information about how much of the signature matched.'},
+
+  {tier:'Security', q:'Which claim most directly enables token revocation?',
+   o:['jti (paired with a denylist) or a custom token-version claim','exp','typ','cty'], a:0,
+   e:'Stateless JWTs cannot be "un-issued" — you need an ID denylist or a token version check.'},
+
+  {tier:'Security', q:'A CSRF risk with JWTs stored in cookies is best mitigated by...',
+   o:['SameSite cookies + CSRF tokens','Moving the JWT to localStorage','Using alg: none','Making the token longer'], a:0,
+   e:'<code>SameSite</code> plus a CSRF token (double-submit or synchroniser pattern).'},
+
+  {tier:'Security', q:'What is the biggest danger of accepting "alg": "none"?',
+   o:['Larger tokens','Signature bypass — attackers can forge arbitrary tokens','Slower verification','Token encryption failure'], a:1,
+   e:'No signature means no integrity. Anyone can mint an admin token.'},
+
+  {tier:'Security', q:'Which is a refresh-token best practice?',
+   o:['Store securely, rotate on every use, revoke on logout, single-use','Treat it exactly like the access token','Put it in the URL','Never expire it'], a:0,
+   e:'Rotation + single-use detection lets you spot and kill stolen refresh tokens.'},
+
+  {tier:'Security', q:'Why should exp validation allow only a small clock-skew leeway?',
+   o:['To accommodate minor clock differences without letting long-expired tokens be accepted','To speed up parsing','To reduce token size','It is not required — exp is optional and never validated'], a:0,
+   e:'A few seconds/minutes of leeway, never hours.'},
+
+  {tier:'Security', q:'A JWT aud mismatch should result in...',
+   o:['Token rejection','Token acceptance with a warning','Re-signing the token','Ignoring it — aud is informational only'], a:0,
+   e:'Wrong audience = wrong service = reject.'},
+
+  {tier:'Security', q:'Which is the best way to prevent confusion between JWS and JWE inputs?',
+   o:['Enforce the expected token type/structure and reject unexpected formats (do not auto-detect)','Use larger keys','Make tokens longer','Always Base64-decode first'], a:0,
+   e:'Explicitly declare what you expect instead of sniffing the input.'},
+
+  {tier:'Security', q:'In code review, a red flag for JWT security is:',
+   o:['The verification function reads alg from the token to choose the algorithm',"The verification function pins algorithms: ['RS256']",'exp and aud are validated','The signature is verified before claims are trusted'], a:0,
+   e:'Algorithm must be chosen by the server, never by the token.'},
+
+  {tier:'Security', q:'Why is a short access-token lifetime important?',
+   o:['It limits the window of abuse if the token is stolen','It reduces CPU usage','It makes tokens smaller','RFC 7519 requires it'], a:0,
+   e:'A stolen token is only useful until it expires — keep that window small.'},
+
+  {tier:'Security', q:'Which of these is a common insecure pattern?',
+   o:['Putting the JWT in a URL query string (leaks via logs, referrers, history)','Sending it in the Authorization: Bearer header','Storing it in an HttpOnly cookie','Rotating signing keys'], a:0,
+   e:'Query strings leak everywhere: access logs, Referer headers, browser history, screenshots.'},
+
+  {tier:'Security', q:'What is the single most important rule for JWT verification?',
+   o:['Never trust any part of the token until the signature has been verified with a trusted key and the claims have been validated','Decode the payload first to check the user role','Trust the alg header','Skip verification in development and enable it in production'], a:0,
+   e:'Verify with a trusted key, then validate claims, then use them. Everything else follows from this.'}
+];
+
+/* ============================================================
+   APP
+   ============================================================ */
+const el = document.getElementById('app');
+const scorebox = document.getElementById('scorebox');
+const state = { deck: [], i: 0, answers: [], answered: false, shuffle: false, finished: false };
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function updateScore(){
+  const done = state.answers.length;
+  const correct = state.answers.filter(a => a.correct).length;
+  scorebox.textContent = 'Score ' + correct + ' / ' + done;
+}
+
+/* ---------- START SCREEN ---------- */
+function renderStart(){
+  state.deck = []; state.i = 0; state.answers = []; state.answered = false; state.finished = false;
+  scorebox.textContent = 'Score 0 / 0';
+
+  el.innerHTML =
+    '<div class="card">' +
+      '<h1>JWT &amp; JWT Security Quiz</h1>' +
+      '<p class="sub">55 multiple-choice questions from fundamentals to real-world JWT attack defences. ' +
+        'Pick an answer and you instantly see whether it is right, the correct answer, and why.</p>' +
+      '<div class="results-grid">' +
+        '<div class="stat"><div class="n">10</div><div class="l">Beginner</div></div>' +
+        '<div class="stat"><div class="n">10</div><div class="l">Intermediate</div></div>' +
+        '<div class="stat"><div class="n">12</div><div class="l">Advanced</div></div>' +
+        '<div class="stat"><div class="n">23</div><div class="l">Security</div></div>' +
+      '</div>' +
+      '<label class="toggle"><input type="checkbox" id="shuf"' + (state.shuffle ? ' checked' : '') + '> Shuffle question order</label>' +
+      '<div class="filters" id="filters"></div>' +
+    '</div>';
+
+  const filters = document.getElementById('filters');
+  ['All','Beginner','Intermediate','Advanced','Security'].forEach(function(name){
+    const count = (name === 'All') ? QUESTIONS.length : QUESTIONS.filter(q => q.tier === name).length;
+    const b = document.createElement('button');
+    b.className = 'btn' + (name === 'All' ? '' : ' ghost');
+    b.textContent = name + ' (' + count + ')';
+    b.onclick = function(){ startQuiz(name); };
+    filters.appendChild(b);
+  });
+
+  document.getElementById('shuf').onchange = function(e){ state.shuffle = e.target.checked; };
+}
+
+/* ---------- START QUIZ ---------- */
+function startQuiz(filter){
+  let deck = QUESTIONS.filter(q => filter === 'All' || q.tier === filter);
+  if (state.shuffle){
+    deck = deck.slice();
+    for (let i = deck.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+    }
+  }
+  state.deck = deck;
+  state.i = 0;
+  state.answers = [];
+  state.answered = false;
+  state.finished = false;
+  renderQuestion();
+}
+
+/* ---------- QUESTION SCREEN ---------- */
+function renderQuestion(){
+  const q = state.deck[state.i];
+  const total = state.deck.length;
+  const pct = (state.i / total) * 100;
+  const tierClass = 't-' + q.tier.toLowerCase();
+
+  el.innerHTML =
+    '<div class="card">' +
+      '<div class="topbar">' +
+        '<span class="pill ' + tierClass + '">' + q.tier + '</span>' +
+        '<span class="counter">Question ' + (state.i + 1) + ' of ' + total + '</span>' +
+      '</div>' +
+      '<div class="progress"><i style="width:' + pct + '%"></i></div>' +
+      '<h2 class="qtext">' + esc(q.q) + '</h2>' +
+      '<div class="options" id="options"></div>' +
+      '<div class="feedback" id="feedback"></div>' +
+      '<div class="actions" id="actions"></div>' +
+    '</div>';
+
+  const box = document.getElementById('options');
+  q.o.forEach(function(opt, idx){
+    const b = document.createElement('button');
+    b.className = 'option';
+    b.innerHTML = '<span class="key">' + 'ABCD'[idx] + '</span>' +
+                  '<span class="txt">' + esc(opt) + '</span>' +
+                  '<span class="mark"></span>';
+    b.onclick = function(){ choose(idx); };
+    box.appendChild(b);
+  });
+
+  state.answered = false;
+  updateScore();
+}
+
+/* ---------- ANSWER SELECTED ---------- */
+function choose(idx){
+  if (state.answered || state.finished) return;
+  state.answered = true;
+
+  const q = state.deck[state.i];
+  const correct = (idx === q.a);
+  state.answers.push({ q: q, chosen: idx, correct: correct });
+
+  const btns = document.querySelectorAll('#options .option');
+  btns.forEach(function(b, bi){
+    b.classList.add('locked');
+    if (bi === q.a){
+      b.classList.add('correct');
+      b.querySelector('.mark').textContent = '✓';
+    }
+    if (bi === idx && !correct){
+      b.classList.add('wrong');
+      b.querySelector('.mark').textContent = '✕';
+    }
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (correct ? 'ok' : 'bad');
+  fb.innerHTML =
+    '<span class="verdict">' + (correct ? '✓ Correct' : '✕ Not quite') + '</span>' +
+    (correct ? '' : '<div style="margin-bottom:8px"><b>Correct answer:</b> ' +
+        'ABCD'[q.a] + '. ' + esc(q.o[q.a]) + '</div>') +
+    '<div>' + q.e + '</div>';
+
+  const actions = document.getElementById('actions');
+  const next = document.createElement('button');
+  next.className = 'btn';
+  next.textContent = (state.i === state.deck.length - 1) ? 'See results' : 'Next →';
+  next.onclick = nextQuestion;
+  actions.appendChild(next);
+
+  updateScore();
+}
+
+/* ---------- NEXT ---------- */
+function nextQuestion(){
+  if (!state.answered) return;
+  state.i++;
+  if (state.i >= state.deck.length){
+    renderResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+/* ---------- RESULTS ---------- */
+function renderResults(){
+  state.finished = true;
+
+  const total = state.answers.length;
+  const correct = state.answers.filter(a => a.correct).length;
+  const pct = total ? Math.round((correct / total) * 100) : 0;
+
+  const tiers = {};
+  state.answers.forEach(function(a){
+    const t = a.q.tier;
+    if (!tiers[t]) tiers[t] = { c: 0, n: 0 };
+    tiers[t].n++;
+    if (a.correct) tiers[t].c++;
+  });
+
+  let tierRows = '';
+  Object.keys(tiers).forEach(function(t){
+    tierRows += '<div class="stat"><div class="n">' + tiers[t].c + '/' + tiers[t].n +
+                '</div><div class="l">' + t + '</div></div>';
+  });
+
+  const missed = state.answers.filter(a => !a.correct);
+  let reviewHtml = '';
+  if (missed.length){
+    let items = '';
+    missed.forEach(function(a){
+      items +=
+        '<div class="item">' +
+          '<div class="qq">' + esc(a.q.q) + '</div>' +
+          '<div class="line">Your answer: <b style="color:#f87171">' +
+            'ABCD'[a.chosen] + '. ' + esc(a.q.o[a.chosen]) + '</b></div>' +
+          '<div class="line">Correct: <b style="color:#4ade80">' +
+            'ABCD'[a.q.a] + '. ' + esc(a.q.o[a.q.a]) + '</b></div>' +
+          '<div class="line" style="margin-top:8px;color:#c3cee3">' + a.q.e + '</div>' +
+        '</div>';
+    });
+    reviewHtml = '<h2 style="font-size:17px;margin:26px 0 10px">Review your ' +
+                 missed.length + ' missed question' + (missed.length > 1 ? 's' : '') +
+                 '</h2><div class="review">' + items + '</div>';
+  } else {
+    reviewHtml = '<p class="sub" style="margin-top:20px">Perfect run — nothing to review. 🎉</p>';
+  }
+
+  el.innerHTML =
+    '<div class="card">' +
+      '<div class="topbar">' +
+        '<span class="pill t-advanced">Results</span>' +
+        '<span class="counter">' + correct + ' of ' + total + ' correct</span>' +
+      '</div>' +
+      '<div class="big-score">' + pct + '%</div>' +
+      '<div class="progress"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="results-grid">' + tierRows + '</div>' +
+      reviewHtml +
+      '<div class="actions"><button class="btn ghost" id="again">Try again</button></div>' +
+    '</div>';
+
+  document.getElementById('again').onclick = renderStart;
+  scorebox.textContent = 'Score ' + correct + ' / ' + total;
+
+  state.deck = []; // disable keyboard nav on results screen
+}
+
+/* ---------- KEYBOARD ---------- */
+document.addEventListener('keydown', function(e){
+  if (!state.deck.length || state.finished) return;
+
+  if (state.answered){
+    if (e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      nextQuestion();
+    }
+    return;
+  }
+
+  const n = parseInt(e.key, 10);
+  if (n >= 1 && n <= 4){
+    const idx = n - 1;
+    if (idx < state.deck[state.i].o.length) choose(idx);
+  }
+});
+
+/* ---------- GO ---------- */
+renderStart();
+</script>
+</body>
+</html>
